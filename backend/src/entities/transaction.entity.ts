@@ -17,7 +17,7 @@ export class Transaction {
   @Column()
   toAccountId: string;
 
-  @Column({ type: "numeric", transformer: numericTransformer })
+  @Column({ type: "numeric", scale: 2, transformer: numericTransformer })
   value: number
 
   @Column({ type: "enum", enum: TransactionType })

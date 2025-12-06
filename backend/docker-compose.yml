@@ -2,19 +2,20 @@ name: minibank
 
 volumes:
   pg_data:
+  node_modules:
 
 services:
   backend:
-    image: node:24-alpine
+    build: .
     volumes:
       - ./:/app
+      - node_modules:/app/node_modules
     ports:
       - 127.0.0.1:8000:8000
     depends_on:
       postgres:
         condition: service_healthy
-    working_dir: /app
-    command: npm run start:dev
+    env_file: .env
 
   postgres:
     image: postgres:17.1-alpine
@@ -26,4 +27,3 @@ services:
       timeout: 3s
       retries: 5
     env_file: .env
-

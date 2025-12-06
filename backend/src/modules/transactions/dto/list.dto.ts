@@ -1,7 +1,7 @@
 import { PaginationRequestDto } from "@/common/utils/pagination.util";
 import { TransactionType } from "@/entities/transaction.entity";
 import { Expose, Type } from "class-transformer";
-import { IsEnum } from "class-validator";
+import { IsEnum, IsOptional } from "class-validator";
 
 export class TransactionDto {
   @Expose()
@@ -25,7 +25,8 @@ export class TransactionDto {
 
 export class GetTransactionsRequestDto extends PaginationRequestDto {
   @IsEnum(TransactionType)
-  type: TransactionType
+  @IsOptional()
+  type?: TransactionType
 }
 
 export class GetTransactionsResponseDto {

@@ -10,7 +10,7 @@ export class Account {
   @Column()
   userId: number
 
-  @Column({ type: "numeric", transformer: numericTransformer })
+  @Column({ type: "numeric", scale: 2, transformer: numericTransformer })
   balance: number
 
   @Column()
