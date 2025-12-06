@@ -1,8 +1,10 @@
 import { Currency } from "@/common/types";
 import { numericTransformer } from "@/common/utils/typeorm.util";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Check, Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 
 @Entity()
+@Check('balance >= 0')
+@Unique(['userId', 'currency'])
 export class Account {
   @PrimaryGeneratedColumn("uuid")
   id: string
@@ -10,7 +12,7 @@ export class Account {
   @Column()
   userId: number
 
-  @Column({ type: "numeric", scale: 2, transformer: numericTransformer })
+  @Column({ type: "numeric", precision: 100, scale: 2, transformer: numericTransformer })
   balance: number
 
   @Column()

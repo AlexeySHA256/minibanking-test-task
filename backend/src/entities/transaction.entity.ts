@@ -1,5 +1,5 @@
 import { numericTransformer } from "@/common/utils/typeorm.util";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 
 export enum TransactionType {
   TRANSFER = "TRANSFER",
@@ -11,13 +11,14 @@ export class Transaction {
   @PrimaryGeneratedColumn('uuid')
   id: number
 
+  @Index()
   @Column()
   fromAccountId: string;
 
   @Column()
   toAccountId: string;
 
-  @Column({ type: "numeric", scale: 2, transformer: numericTransformer })
+  @Column({ type: "numeric", precision: 100, scale: 2, transformer: numericTransformer })
   value: number
 
   @Column({ type: "enum", enum: TransactionType })

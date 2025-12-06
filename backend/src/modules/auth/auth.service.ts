@@ -7,6 +7,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { RegisterDto } from './dto/register.dto';
 import { Account } from '@/entities/account.entity';
 import { Currency } from '@/common/types';
+import { Ledger } from '@/entities/ledger.entity';
 
 @Injectable()
 export class AuthService {
@@ -42,8 +43,17 @@ export class AuthService {
           .returning('*')
           .execute()
 
-        const accounts = accountsInsertResult.generatedMaps as [Account, Account]
-        user.accounts = accounts
+        const [usdAccount, eurAccount] = accountsInsertResult.generatedMaps as [Account, Account]
+
+        await transaction.createQueryBuilder(Ledger, 'ledger')
+          .insert()
+          .values([
+            { accountId: usdAccount.id, value: usdAccount.balance },
+            { accountId: eurAccount.id, value: eurAccount.balance }
+          ])
+          .execute()
+
+        user.accounts = [usdAccount, eurAccount]
       })
     } catch (error) {
       if (error instanceof QueryFailedError && error.message.includes('unique constraint')) {

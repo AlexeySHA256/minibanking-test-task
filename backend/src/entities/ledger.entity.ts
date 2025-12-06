@@ -9,7 +9,7 @@ export class Ledger {
   @Column()
   accountId: string
 
-  @Column({ type: "numeric", scale: 2, transformer: numericTransformer })
+  @Column({ type: "numeric", precision: 100, scale: 2, transformer: numericTransformer })
   value: number
 
   @CreateDateColumn()

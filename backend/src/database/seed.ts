@@ -34,26 +34,32 @@ async function seedAccounts(queryRunner: QueryRunner, users: User[]): Promise<Ac
   const accounts: Account[] = [];
 
   for (const user of users) {
-    accounts.push(
-      accountRepo.create({
-        userId: user.id,
-        currency: Currency.USD,
-        balance: faker.number.float({ min: 500, max: 50000, fractionDigits: 2 }),
-      })
-    );
+    const accountsInsertResult = await queryRunner.manager.createQueryBuilder(Account, 'account')
+      .insert()
+      .values([
+        { currency: Currency.USD, balance: 1000, userId: user.id },
+        { currency: Currency.EUR, balance: 500, userId: user.id }
+      ])
+      .returning('*')
+      .execute()
 
-    accounts.push(
-      accountRepo.create({
-        userId: user.id,
-        currency: Currency.EUR,
-        balance: faker.number.float({ min: 300, max: 35000, fractionDigits: 2 }),
-      })
-    );
+    const [usdAccount, eurAccount] = accountsInsertResult.generatedMaps as [Account, Account]
+
+    accounts.push(usdAccount, eurAccount)
+
+    await queryRunner.manager.createQueryBuilder(Ledger, 'ledger')
+      .insert()
+      .values([
+        { accountId: usdAccount.id, value: 1000 },
+        { accountId: eurAccount.id, value: 500 }
+      ])
+      .execute()
   }
 
   const savedAccounts = await accountRepo.save(accounts);
 
-  return savedAccounts;
+  // Parse balance to number because it becomes string for some reason even after trasformer is applied
+  return savedAccounts.map(account => ({ ...account, balance: parseFloat(String(account.balance)) }));
 }
 
 async function seedTransactions(queryRunner: QueryRunner, accounts: Account[], maxPerAccount: number): Promise<void> {
@@ -70,10 +76,12 @@ async function seedTransactions(queryRunner: QueryRunner, accounts: Account[], m
     for (let i = 0; i < count; i++) {
       if (fromAccount.balance < 1) break
 
-      const type = faker.helpers.weightedArrayElement([
-        { weight: 80, value: TransactionType.TRANSFER },
-        { weight: 20, value: TransactionType.EXCHANGE },
-      ]);
+      // const type = faker.helpers.weightedArrayElement([
+      //   { weight: 80, value: TransactionType.TRANSFER },
+      //   { weight: 20, value: TransactionType.EXCHANGE },
+      // ]);
+
+      const type = TransactionType.TRANSFER
 
       const possibleRecipients = accounts.filter(
         account => account.id !== fromAccount.id &&
