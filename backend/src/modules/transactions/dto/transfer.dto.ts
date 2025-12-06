@@ -1,13 +1,13 @@
-import { Currency } from "@/common/types";
-import { IsEnum, IsPositive, IsUUID } from "class-validator";
+import { Currency } from '@/common/types';
+import { IsEnum, IsPositive, IsUUID } from 'class-validator';
 
 export class TransferDto {
   @IsUUID()
-  toAccountId: string
+  toAccountId: string;
 
   @IsEnum(Currency)
-  currency: Currency
+  currency: Currency;
 
   @IsPositive()
-  amount: number
+  amount: number;
 }

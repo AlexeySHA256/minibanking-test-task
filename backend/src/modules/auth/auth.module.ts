@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import ms from "ms"
+import ms from 'ms';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@/entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
@@ -17,13 +17,13 @@ import { AccountsModule } from '@/modules//accounts/accounts.module';
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.getOrThrow<ms.StringValue>('JWT_EXPIRATION')
-        }
-      })
+          expiresIn: configService.getOrThrow<ms.StringValue>('JWT_EXPIRATION'),
+        },
+      }),
     }),
-    AccountsModule
+    AccountsModule,
   ],
   providers: [AuthService, JwtStrategy],
-  controllers: [AuthController]
+  controllers: [AuthController],
 })
-export class AuthModule { }
+export class AuthModule {}

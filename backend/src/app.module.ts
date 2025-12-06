@@ -12,7 +12,7 @@ import { AccountsModule } from './modules/accounts/accounts.module';
     TypeOrmModule.forRoot(dataSourceOptions),
     AuthModule,
     TransactionsModule,
-    AccountsModule
+    AccountsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

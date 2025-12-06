@@ -1,15 +1,15 @@
-import { Currency } from "@/common/types";
-import { Expose, Type } from "class-transformer";
+import { Currency } from '@/common/types';
+import { Expose, Type } from 'class-transformer';
 
 class AccountDto {
   @Expose()
-  id: string
+  id: string;
 
   @Expose()
-  balance: number
+  balance: number;
 
   @Expose()
-  currency: Currency
+  currency: Currency;
 }
 
 export class GetMeResponseDto {
@@ -17,18 +17,18 @@ export class GetMeResponseDto {
   id: number;
 
   @Expose()
-  name: string
+  name: string;
 
   @Expose()
-  email: string
+  email: string;
 
   @Expose()
   @Type(() => AccountDto)
-  accounts?: AccountDto[]
+  accounts?: AccountDto[];
 
   @Expose()
-  createdAt: Date
+  createdAt: Date;
 
   @Expose()
-  updatedAt: Date
+  updatedAt: Date;
 }

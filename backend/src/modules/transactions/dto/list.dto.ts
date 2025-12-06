@@ -1,11 +1,11 @@
-import { PaginationRequestDto } from "@/common/utils/pagination.util";
-import { TransactionType } from "@/entities/transaction.entity";
-import { Expose, Type } from "class-transformer";
-import { IsEnum, IsOptional } from "class-validator";
+import { PaginationRequestDto } from '@/common/utils/pagination.util';
+import { TransactionType } from '@/entities/transaction.entity';
+import { Expose, Type } from 'class-transformer';
+import { IsEnum, IsOptional } from 'class-validator';
 
 export class TransactionDto {
   @Expose()
-  id: number
+  id: number;
 
   @Expose()
   fromAccountId: string;
@@ -14,30 +14,29 @@ export class TransactionDto {
   toAccountId: string;
 
   @Expose()
-  value: number
+  value: number;
 
   @Expose()
-  type: TransactionType
+  type: TransactionType;
 
   @Expose()
-  createdAt: Date
+  createdAt: Date;
 }
 
 export class GetTransactionsRequestDto extends PaginationRequestDto {
   @IsEnum(TransactionType)
   @IsOptional()
-  type?: TransactionType
+  type?: TransactionType;
 }
 
 export class GetTransactionsResponseDto {
   @Expose()
   @Type(() => TransactionDto)
-  list: TransactionDto[]
+  list: TransactionDto[];
 
   @Expose()
-  total: number
+  total: number;
 
   @Expose()
-  lastPage: number
+  lastPage: number;
 }
-

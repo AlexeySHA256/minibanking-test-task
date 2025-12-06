@@ -1,7 +1,6 @@
-
 export enum Currency {
-  USD = "USD",
-  EUR = "EUR"
+  USD = 'USD',
+  EUR = 'EUR',
 }
 
-export type AuthPayload = { id: number, name: string }
+export type AuthPayload = { id: number; name: string };

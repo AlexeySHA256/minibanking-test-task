@@ -1,27 +1,33 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Account } from "./account.entity";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { Account } from './account.entity';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
-  @Column({ unique: true, type: "citext" })
-  email: string
+  @Column({ unique: true, type: 'citext' })
+  email: string;
 
   @Column()
-  password: string
+  password: string;
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: Date;
 
   // Virtual
 
-  accounts: Account[]
+  accounts: Account[];
 }

@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, Post, Res } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import ms from "ms"
+import ms from 'ms';
 import { ConfigService } from '@nestjs/config';
 import { Serialize } from '@/common/decorators/serialize.decorator';
 import { GetMeResponseDto } from './dto/get-me.dto';
@@ -13,33 +13,38 @@ import type { AuthPayload } from '@/common/types';
 
 @Controller('auth')
 export class AuthController {
-  @Inject() authService: AuthService
-  @Inject() configService: ConfigService
+  @Inject() authService: AuthService;
+  @Inject() configService: ConfigService;
 
   @Post('/login')
   @Serialize(GetMeResponseDto)
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) {
-    const { user, token } = await this.authService.login(dto)
-    this.setTokenCookie(token, response)
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { user, token } = await this.authService.login(dto);
+    this.setTokenCookie(token, response);
 
-    return user
+    return user;
   }
 
   @Post('/register')
   @Serialize(GetMeResponseDto)
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) response: Response) {
-    const { user, token } = await this.authService.register(dto)
-    this.setTokenCookie(token, response)
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { user, token } = await this.authService.register(dto);
+    this.setTokenCookie(token, response);
 
-    return user
-
+    return user;
   }
 
   @Get('/me')
   @Serialize(GetMeResponseDto)
   @UserOnly()
   async getMe(@CurrentUser() user: AuthPayload) {
-    return this.authService.getMe(user.id)
+    return this.authService.getMe(user.id);
   }
 
   private setTokenCookie(token: string, response: Response) {
@@ -47,7 +52,9 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       httpOnly: true,
-      maxAge: ms(this.configService.getOrThrow<ms.StringValue>("JWT_EXPIRATION"))
-    })
+      maxAge: ms(
+        this.configService.getOrThrow<ms.StringValue>('JWT_EXPIRATION'),
+      ),
+    });
   }
 }

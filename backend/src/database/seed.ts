@@ -9,7 +9,10 @@ import { Currency } from '@/common/types';
 
 const PASSWORD = 'qwerty123';
 
-async function seedUsers(queryRunner: QueryRunner, count: number): Promise<User[]> {
+async function seedUsers(
+  queryRunner: QueryRunner,
+  count: number,
+): Promise<User[]> {
   const userRepo = queryRunner.manager.getRepository(User);
 
   const users = Array.from({ length: count }, () => {
@@ -28,66 +31,81 @@ async function seedUsers(queryRunner: QueryRunner, count: number): Promise<User[
   return savedUsers;
 }
 
-async function seedAccounts(queryRunner: QueryRunner, users: User[]): Promise<Account[]> {
+async function seedAccounts(
+  queryRunner: QueryRunner,
+  users: User[],
+): Promise<Account[]> {
   const accountRepo = queryRunner.manager.getRepository(Account);
 
   const accounts: Account[] = [];
 
   for (const user of users) {
-    const accountsInsertResult = await queryRunner.manager.createQueryBuilder(Account, 'account')
+    const accountsInsertResult = await queryRunner.manager
+      .createQueryBuilder(Account, 'account')
       .insert()
       .values([
         { currency: Currency.USD, balance: 1000, userId: user.id },
-        { currency: Currency.EUR, balance: 500, userId: user.id }
+        { currency: Currency.EUR, balance: 500, userId: user.id },
       ])
       .returning('*')
-      .execute()
+      .execute();
 
-    const [usdAccount, eurAccount] = accountsInsertResult.generatedMaps as [Account, Account]
+    const [usdAccount, eurAccount] = accountsInsertResult.generatedMaps as [
+      Account,
+      Account,
+    ];
 
-    accounts.push(usdAccount, eurAccount)
+    accounts.push(usdAccount, eurAccount);
 
-    await queryRunner.manager.createQueryBuilder(Ledger, 'ledger')
+    await queryRunner.manager
+      .createQueryBuilder(Ledger, 'ledger')
       .insert()
       .values([
         { accountId: usdAccount.id, value: 1000 },
-        { accountId: eurAccount.id, value: 500 }
+        { accountId: eurAccount.id, value: 500 },
       ])
-      .execute()
+      .execute();
   }
 
   const savedAccounts = await accountRepo.save(accounts);
 
   // Parse balance to number because it becomes string for some reason even after trasformer is applied
-  return savedAccounts.map(account => ({ ...account, balance: parseFloat(String(account.balance)) }));
+  return savedAccounts.map((account) => ({
+    ...account,
+    balance: parseFloat(String(account.balance)),
+  }));
 }
 
-async function seedTransactions(queryRunner: QueryRunner, accounts: Account[], maxPerAccount: number): Promise<void> {
+async function seedTransactions(
+  queryRunner: QueryRunner,
+  accounts: Account[],
+  maxPerAccount: number,
+): Promise<void> {
   const transactionRepo = queryRunner.manager.getRepository(Transaction);
   const ledgerRepo = queryRunner.manager.getRepository(Ledger);
   const accountRepo = queryRunner.manager.getRepository(Account);
 
-  const transactions: Transaction[] = []
-  const ledgers: Ledger[] = []
+  const transactions: Transaction[] = [];
+  const ledgers: Ledger[] = [];
 
   for (const fromAccount of accounts) {
-    const count = faker.number.int({ min: 0, max: maxPerAccount })
+    const count = faker.number.int({ min: 0, max: maxPerAccount });
 
     for (let i = 0; i < count; i++) {
-      if (fromAccount.balance < 1) break
+      if (fromAccount.balance < 1) break;
 
       // const type = faker.helpers.weightedArrayElement([
       //   { weight: 80, value: TransactionType.TRANSFER },
       //   { weight: 20, value: TransactionType.EXCHANGE },
       // ]);
 
-      const type = TransactionType.TRANSFER
+      const type = TransactionType.TRANSFER;
 
-      const possibleRecipients = accounts.filter(
-        account => account.id !== fromAccount.id &&
-          type === TransactionType.TRANSFER ?
-          account.userId !== fromAccount.userId && account.currency === fromAccount.currency :
-          account.userId === fromAccount.userId
+      const possibleRecipients = accounts.filter((account) =>
+        account.id !== fromAccount.id && type === TransactionType.TRANSFER
+          ? account.userId !== fromAccount.userId &&
+            account.currency === fromAccount.currency
+          : account.userId === fromAccount.userId,
       );
 
       if (possibleRecipients.length === 0) continue;
@@ -107,10 +125,10 @@ async function seedTransactions(queryRunner: QueryRunner, accounts: Account[], m
           toAccountId: toAccount.id,
           value: amount,
           type,
-        })
+        }),
       );
 
-      transactions.push(transaction)
+      transactions.push(transaction);
 
       // TODO: handle exchange rates for exchange transaction
 
@@ -125,7 +143,7 @@ async function seedTransactions(queryRunner: QueryRunner, accounts: Account[], m
         ledgerRepo.create({ accountId: toAccount.id, value: +amount }),
       ]);
 
-      ledgers.push(...transactionLedgers)
+      ledgers.push(...transactionLedgers);
     }
   }
 }
@@ -147,11 +165,11 @@ export async function main() {
 
   try {
     const users = await seedUsers(queryRunner, 20);
-    console.log("Users created")
+    console.log('Users created');
     const accounts = await seedAccounts(queryRunner, users);
-    console.log("Accounts created")
+    console.log('Accounts created');
     await seedTransactions(queryRunner, accounts, 10);
-    console.log("Transactions created")
+    console.log('Transactions created');
 
     await queryRunner.commitTransaction();
     console.log('Seed completed successfully!');
@@ -164,4 +182,4 @@ export async function main() {
   }
 }
 
-main()
+main();

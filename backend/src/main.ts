@@ -10,13 +10,13 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      transformOptions: { enableImplicitConversion: true }
-    })
+      transformOptions: { enableImplicitConversion: true },
+    }),
   );
 
-  app.use(cookieParser())
+  app.use(cookieParser());
 
-  app.setGlobalPrefix("/api")
+  app.setGlobalPrefix('/api');
 
   await app.listen(process.env.PORT ?? 8000);
 }

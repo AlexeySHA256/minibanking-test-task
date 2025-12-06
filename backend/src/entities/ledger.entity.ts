@@ -1,20 +1,30 @@
-import { numericTransformer } from "@/common/utils/typeorm.util";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { numericTransformer } from '@/common/utils/typeorm.util';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Ledger {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  accountId: string
+  accountId: string;
 
   @Column()
-  transactionId: string
+  transactionId: string;
 
-  @Column({ type: "numeric", precision: 100, scale: 2, transformer: numericTransformer })
-  value: number
+  @Column({
+    type: 'numeric',
+    precision: 100,
+    scale: 2,
+    transformer: numericTransformer,
+  })
+  value: number;
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: Date;
 }

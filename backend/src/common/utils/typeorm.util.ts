@@ -1,4 +1,4 @@
-import { ValueTransformer } from "typeorm";
+import { ValueTransformer } from 'typeorm';
 
 export const numericTransformer: ValueTransformer = {
   to: (value: number | null | undefined) => {
@@ -8,6 +8,5 @@ export const numericTransformer: ValueTransformer = {
   from: (value: string) => {
     const num = parseFloat(value);
     return isNaN(num) ? null : num;
-  }
+  },
 };
-

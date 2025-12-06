@@ -1,4 +1,9 @@
-import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,48 +15,69 @@ import { AccountsService } from '../accounts/accounts.service';
 
 @Injectable()
 export class AuthService {
-  @Inject() jwtService: JwtService
-  @Inject() accountsService: AccountsService
-  @InjectRepository(User) userRepo: Repository<User>
+  @Inject() jwtService: JwtService;
+  @Inject() accountsService: AccountsService;
+  @InjectRepository(User) userRepo: Repository<User>;
 
   async login(dto: LoginDto) {
-    const user = await this.userRepo.createQueryBuilder()
+    const user = await this.userRepo
+      .createQueryBuilder()
       .where('lower(email) = lower(:email)', { email: dto.email })
-      .getOne()
+      .getOne();
 
-    if (!user) throw new UnauthorizedException("Invalid email or password")
-    if (user.password !== dto.password) throw new UnauthorizedException("Invalid email or password")
+    if (!user) throw new UnauthorizedException('Invalid email or password');
+    if (user.password !== dto.password)
+      throw new UnauthorizedException('Invalid email or password');
 
-    const token = await this.jwtService.signAsync({ id: user.id, name: user.name })
+    const token = await this.jwtService.signAsync({
+      id: user.id,
+      name: user.name,
+    });
 
-    return { user, token }
+    return { user, token };
   }
 
   async register(dto: RegisterDto) {
-    const user = this.userRepo.create(dto)
+    const user = this.userRepo.create(dto);
 
     try {
       await this.userRepo.manager.transaction(async (dbTransaction) => {
-        await dbTransaction.save(user)
-        const accounts = await this.accountsService.createAndCreditInitialAccounts(dbTransaction, user.id)
-        user.accounts = accounts
-      })
+        await dbTransaction.save(user);
+        const accounts =
+          await this.accountsService.createAndCreditInitialAccounts(
+            dbTransaction,
+            user.id,
+          );
+        user.accounts = accounts;
+      });
     } catch (error) {
-      if (error instanceof QueryFailedError && error.message.includes('unique constraint')) {
-        throw new ConflictException('User already registered')
+      if (
+        error instanceof QueryFailedError &&
+        error.message.includes('unique constraint')
+      ) {
+        throw new ConflictException('User already registered');
       }
-      throw error
+      throw error;
     }
 
-    const token = await this.jwtService.signAsync({ id: user.id, name: user.name })
+    const token = await this.jwtService.signAsync({
+      id: user.id,
+      name: user.name,
+    });
 
-    return { user, token }
+    return { user, token };
   }
 
   async getMe(userId: number) {
-    return this.userRepo.createQueryBuilder('user')
+    return this.userRepo
+      .createQueryBuilder('user')
       .where({ id: userId })
-      .leftJoinAndMapMany('user.accounts', Account, 'account', `account."userId" = "user".id`)
-      .getOne()
+      .leftJoinAndMapMany(
+        'user.accounts',
+        Account,
+        'account',
+        `account."userId" = "user".id`,
+      )
+      .getOne();
   }
 }

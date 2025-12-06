@@ -17,11 +17,15 @@ export class PaginationRequestDto {
   }
 }
 
-export function createPaginatedResult<T>(list: T[], total: number, limit: number) {
+export function createPaginatedResult<T>(
+  list: T[],
+  total: number,
+  limit: number,
+) {
   return {
     list,
     total,
-    lastPage: Math.ceil(total / limit)
+    lastPage: Math.ceil(total / limit),
   };
 }
 
