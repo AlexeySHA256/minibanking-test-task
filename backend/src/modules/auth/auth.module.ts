@@ -7,6 +7,7 @@ import ms from "ms"
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@/entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
+import { AccountsModule } from '@/modules//accounts/accounts.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { JwtStrategy } from './jwt.strategy';
           expiresIn: configService.getOrThrow<ms.StringValue>('JWT_EXPIRATION')
         }
       })
-    })
+    }),
+    AccountsModule
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController]

@@ -6,12 +6,12 @@ import { User } from '@/entities/user.entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { RegisterDto } from './dto/register.dto';
 import { Account } from '@/entities/account.entity';
-import { Currency } from '@/common/types';
-import { Ledger } from '@/entities/ledger.entity';
+import { AccountsService } from '../accounts/accounts.service';
 
 @Injectable()
 export class AuthService {
   @Inject() jwtService: JwtService
+  @Inject() accountsService: AccountsService
   @InjectRepository(User) userRepo: Repository<User>
 
   async login(dto: LoginDto) {
@@ -31,29 +31,10 @@ export class AuthService {
     const user = this.userRepo.create(dto)
 
     try {
-      await this.userRepo.manager.transaction(async (transaction) => {
-        await transaction.save(user)
-
-        const accountsInsertResult = await transaction.createQueryBuilder(Account, 'account')
-          .insert()
-          .values([
-            { currency: Currency.USD, balance: 1000, userId: user.id },
-            { currency: Currency.EUR, balance: 500, userId: user.id }
-          ])
-          .returning('*')
-          .execute()
-
-        const [usdAccount, eurAccount] = accountsInsertResult.generatedMaps as [Account, Account]
-
-        await transaction.createQueryBuilder(Ledger, 'ledger')
-          .insert()
-          .values([
-            { accountId: usdAccount.id, value: usdAccount.balance },
-            { accountId: eurAccount.id, value: eurAccount.balance }
-          ])
-          .execute()
-
-        user.accounts = [usdAccount, eurAccount]
+      await this.userRepo.manager.transaction(async (dbTransaction) => {
+        await dbTransaction.save(user)
+        const accounts = await this.accountsService.createAndCreditInitialAccounts(dbTransaction, user.id)
+        user.accounts = accounts
       })
     } catch (error) {
       if (error instanceof QueryFailedError && error.message.includes('unique constraint')) {
@@ -72,6 +53,5 @@ export class AuthService {
       .where({ id: userId })
       .leftJoinAndMapMany('user.accounts', Account, 'account', `account."userId" = "user".id`)
       .getOne()
-
   }
 }

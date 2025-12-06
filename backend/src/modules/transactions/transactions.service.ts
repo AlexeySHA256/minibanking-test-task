@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { GetTransactionsRequestDto } from './dto/list.dto';
 import { TransferDto } from './dto/transfer.dto';
 import { ExchangeDto } from './dto/exchange.dto';
@@ -8,27 +8,13 @@ import { In, Repository } from 'typeorm';
 import { createPaginatedResult } from '@/common/utils/pagination.util';
 import { Account } from '@/entities/account.entity';
 import { Ledger } from '@/entities/ledger.entity';
-import { Currency } from '@/common/types';
+import { AccountsService } from '@/modules/accounts/accounts.service';
 
 @Injectable()
-export class TransactionsService implements OnModuleInit {
+export class TransactionsService {
   @InjectRepository(Transaction) transactionRepo: Repository<Transaction>
   @InjectRepository(Account) accountRepo: Repository<Account>
-
-  private exchangeRates: Map<string, number>
-
-  onModuleInit() {
-    this.exchangeRates = new Map()
-    this.exchangeRates.set("USD:EUR", 0.92)
-  }
-
-  getExchangeRate(from: Currency, to: Currency) {
-    const directRate = this.exchangeRates.get(`${from}:${to}`)
-    if (directRate) return directRate
-
-    const reverseRate = this.exchangeRates.get(`${to}:${from}`)
-    if (reverseRate) return 1 / reverseRate
-  }
+  @Inject() accountsService: AccountsService
 
   async exchange(dto: ExchangeDto, userId: number) {
     const accounts = await this.accountRepo.findBy({ userId, currency: In([dto.from, dto.to]) })
@@ -41,14 +27,14 @@ export class TransactionsService implements OnModuleInit {
 
     if (fromAccount.balance < dto.amount) throw new BadRequestException("Balance is too low")
 
-    const exchangeRate = this.getExchangeRate(dto.from, dto.to)
+    const exchangeRate = this.accountsService.getExchangeRate(dto.from, dto.to)
     if (!exchangeRate) {
       console.error(`No available exchange rate for ${dto.from}:${dto.to}`)
       throw new ForbiddenException(`Exchange between ${dto.from} and ${dto.to} is not currently available`)
     }
     const creditAmount = dto.amount * exchangeRate
 
-    const transaction = await this.createAccountsTransaction(fromAccount.id, toAccount.id, dto.amount, TransactionType.EXCHANGE, creditAmount)
+    const transaction = await this.conductTransaction(fromAccount.id, toAccount.id, dto.amount, TransactionType.EXCHANGE, creditAmount)
 
     return transaction
   }
@@ -71,7 +57,7 @@ export class TransactionsService implements OnModuleInit {
       throw new BadRequestException(`Recipient account's currency does not match the selected currency. Account currency is: '${toAccount.currency}', but selected: '${dto.currency}'`)
     }
 
-    const transaction = await this.createAccountsTransaction(fromAccount.id, toAccount.id, dto.amount, TransactionType.TRANSFER)
+    const transaction = await this.conductTransaction(fromAccount.id, toAccount.id, dto.amount, TransactionType.TRANSFER)
 
     return transaction
   }
@@ -94,11 +80,8 @@ export class TransactionsService implements OnModuleInit {
     return createPaginatedResult(list, total, dto.limit)
   }
 
-  private async createAccountsTransaction(fromAccountId: string, toAccountId: string, debitAmount: number, type: TransactionType, creditAmount: number = debitAmount) {
-    const result = await this.accountRepo.manager.transaction(async (dbTransaction) => {
-      await dbTransaction.insert(Ledger, { accountId: fromAccountId, value: -debitAmount })
-      await dbTransaction.insert(Ledger, { accountId: toAccountId, value: +creditAmount })
-
+  private conductTransaction(fromAccountId: string, toAccountId: string, debitAmount: number, type: TransactionType, creditAmount: number = debitAmount) {
+    return this.accountRepo.manager.transaction(async (dbTransaction) => {
       const updateResult = await dbTransaction.query<[[], number]>(
         'UPDATE account SET balance = balance - $1 WHERE id = $2 AND balance >= $1',
         [debitAmount, fromAccountId]
@@ -112,13 +95,12 @@ export class TransactionsService implements OnModuleInit {
         throw new ConflictException('Transaction failed, please try again')
       }
 
-      console.log("Update result", updateResult)
       await dbTransaction.query(
         'UPDATE account SET balance = balance + $1 WHERE id = $2',
         [creditAmount, toAccountId]
       )
 
-      return await dbTransaction.createQueryBuilder()
+      const transactionInsertResult = await dbTransaction.createQueryBuilder()
         .insert()
         .into(Transaction).values({
           fromAccountId,
@@ -128,10 +110,15 @@ export class TransactionsService implements OnModuleInit {
         })
         .returning('*')
         .execute()
+
+      const [transaction] = transactionInsertResult.raw as [Transaction]
+
+      await dbTransaction.insert(Ledger, [
+        { accountId: fromAccountId, value: -debitAmount, transactionId: transaction.id },
+        { accountId: toAccountId, value: +creditAmount, transactionId: transaction.id }
+      ])
+
+      return transaction
     })
-
-    const resultRaw = result.raw as [Transaction]
-
-    return resultRaw[0]
   }
 }

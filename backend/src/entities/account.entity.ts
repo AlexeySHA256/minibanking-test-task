@@ -2,6 +2,11 @@ import { Currency } from "@/common/types";
 import { numericTransformer } from "@/common/utils/typeorm.util";
 import { Check, Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 
+export enum AccountType {
+  ASSET = "asset",
+  LIABILITY = "liability"
+}
+
 @Entity()
 @Check('balance >= 0')
 @Unique(['userId', 'currency'])
@@ -17,4 +22,7 @@ export class Account {
 
   @Column()
   currency: Currency
+
+  @Column({ default: AccountType.LIABILITY, enum: AccountType })
+  type: AccountType
 }
