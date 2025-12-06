@@ -1,7 +1,7 @@
 import { numericTransformer } from "@/common/utils/typeorm.util";
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-enum TransactionType {
+export enum TransactionType {
   TRANSFER = "TRANSFER",
   EXCHANGE = "EXCHANGE"
 }
