@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Account } from "./account.entity";
 
 @Entity()
 export class User {
@@ -8,7 +9,7 @@ export class User {
   @Column()
   name: string
 
-  @Column()
+  @Column({ unique: true, type: "citext" })
   email: string
 
   @Column()
@@ -19,4 +20,8 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  // Virtual
+
+  accounts: Account[]
 }

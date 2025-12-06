@@ -1,9 +1,12 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@/entities/user.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
+import { RegisterDto } from './dto/register.dto';
+import { Account } from '@/entities/account.entity';
+import { Currency } from '@/common/types';
 
 @Injectable()
 export class AuthService {
@@ -18,8 +21,47 @@ export class AuthService {
     if (!user) throw new UnauthorizedException("Invalid email or password")
     if (user.password !== dto.password) throw new UnauthorizedException("Invalid email or password")
 
-    const token = this.jwtService.signAsync({ id: user.id, name: user.name })
+    const token = await this.jwtService.signAsync({ id: user.id, name: user.name })
 
     return { user, token }
+  }
+
+  async register(dto: RegisterDto) {
+    const user = this.userRepo.create(dto)
+
+    try {
+      await this.userRepo.manager.transaction(async (transaction) => {
+        await transaction.save(user)
+
+        const accountsInsertResult = await transaction.createQueryBuilder(Account, 'account')
+          .insert()
+          .values([
+            { currency: Currency.USD, balance: 1000, userId: user.id },
+            { currency: Currency.EUR, balance: 500, userId: user.id }
+          ])
+          .returning('*')
+          .execute()
+
+        const accounts = accountsInsertResult.generatedMaps as [Account, Account]
+        user.accounts = accounts
+      })
+    } catch (error) {
+      if (error instanceof QueryFailedError && error.message.includes('unique constraint')) {
+        throw new ConflictException('User already registered')
+      }
+      throw error
+    }
+
+    const token = await this.jwtService.signAsync({ id: user.id, name: user.name })
+
+    return { user, token }
+  }
+
+  async getMe(userId: number) {
+    return this.userRepo.createQueryBuilder('user')
+      .where({ id: userId })
+      .leftJoinAndMapMany('user.accounts', Account, 'account', `account."userId" = "user".id`)
+      .getOne()
+
   }
 }
