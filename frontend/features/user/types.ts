@@ -7,7 +7,7 @@ export type User = {
   id: number;
   name: string;
   email: string;
-  accounts?: Account[];
+  accounts: Account[];
   createdAt: Date;
   updatedAt: Date;
 }
