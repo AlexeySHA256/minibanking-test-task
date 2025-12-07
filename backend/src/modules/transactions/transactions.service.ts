@@ -80,6 +80,7 @@ export class TransactionsService {
         "Recipient account was not found, make sure you've provided a valid account id",
       );
     }
+    if (toAccount.userId === userId) throw new BadRequestException("You can't transfer to your own account, use exchange instead")
     if (toAccount.currency !== dto.currency) {
       throw new BadRequestException(
         `Recipient account's currency does not match the selected currency. Account currency is: '${toAccount.currency}', but selected: '${dto.currency}'`,
