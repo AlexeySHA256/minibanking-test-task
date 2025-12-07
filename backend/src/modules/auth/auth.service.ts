@@ -12,6 +12,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { RegisterDto } from './dto/register.dto';
 import { Account } from '@/entities/account.entity';
 import { AccountsService } from '../accounts/accounts.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,9 @@ export class AuthService {
       .getOne();
 
     if (!user) throw new UnauthorizedException('Invalid email or password');
-    if (user.password !== dto.password)
+
+    const passwordsMatches = await bcrypt.compare(dto.password, user.password)
+    if (!passwordsMatches)
       throw new UnauthorizedException('Invalid email or password');
 
     const token = await this.jwtService.signAsync({
@@ -38,7 +41,8 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const user = this.userRepo.create(dto);
+    const passwordHash = await bcrypt.hash(dto.password, 10)
+    const user = this.userRepo.create({ ...dto, password: passwordHash });
 
     try {
       await this.userRepo.manager.transaction(async (dbTransaction) => {

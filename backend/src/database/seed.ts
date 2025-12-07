@@ -5,8 +5,8 @@ import { Transaction, TransactionType } from '@/entities/transaction.entity';
 import { Ledger } from '@/entities/ledger.entity';
 import { faker } from '@faker-js/faker';
 import { dataSource } from './datasource';
-import { Currency } from '@/common/types';
 import { AccountsService } from '@/modules/accounts/accounts.service';
+import * as bcrypt from "bcrypt"
 
 const getAccountsService = async (queryRunner: QueryRunner) => {
   const accountsService = new AccountsService()
@@ -17,7 +17,7 @@ const getAccountsService = async (queryRunner: QueryRunner) => {
   return accountsService
 }
 
-const PASSWORD = 'qwerty123';
+const password = bcrypt.hashSync('qwerty123', 10);
 
 async function seedUsers(
   queryRunner: QueryRunner,
@@ -32,7 +32,7 @@ async function seedUsers(
     return userRepo.create({
       name: `${firstName} ${lastName}`,
       email: faker.internet.email({ firstName, lastName }).toLowerCase(),
-      password: PASSWORD,
+      password,
     });
   });
 
