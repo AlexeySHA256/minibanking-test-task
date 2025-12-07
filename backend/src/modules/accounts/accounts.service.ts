@@ -18,19 +18,23 @@ export class AccountsService implements OnModuleInit {
   private assetAccountsMap: Map<Currency, Account>;
   private exchangeRatesMap: Map<string, number>;
 
-  getExchangeRate(from: Currency, to: Currency) {
-    const directRate = this.exchangeRatesMap.get(`${from}:${to}`);
+  getExchangeRate(key: string) {
+    const directRate = this.exchangeRatesMap.get(key);
     if (directRate) return directRate;
 
-    const reverseRate = this.exchangeRatesMap.get(`${to}:${from}`);
+    const reverseRate = this.exchangeRatesMap.get(key.split(":").reverse().join(":"));
     if (reverseRate) return 1 / reverseRate;
+  }
+
+  getCurrencies() {
+    return Object.entries(Currency).map(([name, symbol]) => ({ name, symbol }))
   }
 
   onModuleInit() {
     // Initialize exchange rates
 
     this.exchangeRatesMap = new Map();
-    this.exchangeRatesMap.set('USD:EUR', 0.92);
+    this.exchangeRatesMap.set(`${Currency.USD}:${Currency.EUR}`, 0.92);
 
     // Initialize asset accounts
 

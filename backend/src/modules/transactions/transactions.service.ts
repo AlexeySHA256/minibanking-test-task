@@ -39,7 +39,7 @@ export class TransactionsService {
     if (fromAccount.balance < dto.amount)
       throw new BadRequestException('Balance is too low');
 
-    const exchangeRate = this.accountsService.getExchangeRate(dto.from, dto.to);
+    const exchangeRate = this.accountsService.getExchangeRate(`${dto.from}:${dto.to}`);
     if (!exchangeRate) {
       console.error(`No available exchange rate for ${dto.from}:${dto.to}`);
       throw new ForbiddenException(
