@@ -98,6 +98,7 @@ async function seedTransactions(
         transactionRepo.create({
           fromAccountId: fromAccount.id,
           toAccountId: toAccount.id,
+          currency: toAccount.currency,
           value: amount,
           type,
         }),

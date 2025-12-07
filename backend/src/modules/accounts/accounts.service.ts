@@ -90,6 +90,7 @@ export class AccountsService implements OnModuleInit {
         accounts.map((account) => ({
           fromAccountId: this.assetAccountsMap.get(account.currency)!.id,
           toAccountId: account.id,
+          currency: account.currency,
           value: account.balance,
           type: TransactionType.TRANSFER,
         })),

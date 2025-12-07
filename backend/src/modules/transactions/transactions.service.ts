@@ -49,8 +49,8 @@ export class TransactionsService {
     const creditAmount = dto.amount * exchangeRate;
 
     const transaction = await this.conductTransaction(
-      fromAccount.id,
-      toAccount.id,
+      fromAccount,
+      toAccount,
       dto.amount,
       TransactionType.EXCHANGE,
       creditAmount,
@@ -87,8 +87,8 @@ export class TransactionsService {
     }
 
     const transaction = await this.conductTransaction(
-      fromAccount.id,
-      toAccount.id,
+      fromAccount,
+      toAccount,
       dto.amount,
       TransactionType.TRANSFER,
     );
@@ -122,8 +122,8 @@ export class TransactionsService {
   }
 
   private conductTransaction(
-    fromAccountId: string,
-    toAccountId: string,
+    fromAccount: Account,
+    toAccount: Account,
     debitAmount: number,
     type: TransactionType,
     creditAmount: number = debitAmount,
@@ -131,7 +131,7 @@ export class TransactionsService {
     return this.accountRepo.manager.transaction(async (dbTransaction) => {
       const updateResult = await dbTransaction.query<[[], number]>(
         'UPDATE account SET balance = balance - $1 WHERE id = $2 AND balance >= $1',
-        [debitAmount, fromAccountId],
+        [debitAmount, fromAccount.id],
       );
       /*
        * updateResult[1] is a number of affected rows by query
@@ -144,7 +144,7 @@ export class TransactionsService {
 
       await dbTransaction.query(
         'UPDATE account SET balance = balance + $1 WHERE id = $2',
-        [creditAmount, toAccountId],
+        [creditAmount, toAccount.id],
       );
 
       const transactionInsertResult = await dbTransaction
@@ -152,9 +152,10 @@ export class TransactionsService {
         .insert()
         .into(Transaction)
         .values({
-          fromAccountId,
-          toAccountId,
+          fromAccountId: fromAccount.id,
+          toAccountId: toAccount.id,
           value: creditAmount,
+          currency: toAccount.currency,
           type,
         })
         .returning('*')
@@ -164,12 +165,12 @@ export class TransactionsService {
 
       await dbTransaction.insert(Ledger, [
         {
-          accountId: fromAccountId,
+          accountId: fromAccount.id,
           value: -debitAmount,
           transactionId: transaction.id,
         },
         {
-          accountId: toAccountId,
+          accountId: toAccount.id,
           value: +creditAmount,
           transactionId: transaction.id,
         },

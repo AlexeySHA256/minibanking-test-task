@@ -1,3 +1,4 @@
+import { Currency } from '@/common/types';
 import { numericTransformer } from '@/common/utils/typeorm.util';
 import {
   Column,
@@ -31,6 +32,9 @@ export class Transaction {
     transformer: numericTransformer,
   })
   value: number;
+
+  @Column()
+  currency: Currency
 
   @Column({ type: 'enum', enum: TransactionType })
   type: TransactionType;

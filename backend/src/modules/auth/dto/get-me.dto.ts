@@ -1,4 +1,5 @@
 import { Currency } from '@/common/types';
+import { AccountType } from '@/entities/account.entity';
 import { Expose, Type } from 'class-transformer';
 
 class AccountDto {
@@ -10,6 +11,9 @@ class AccountDto {
 
   @Expose()
   currency: Currency;
+
+  @Expose()
+  type: AccountType
 }
 
 export class GetMeResponseDto {
