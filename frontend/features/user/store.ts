@@ -10,9 +10,10 @@ type State = {
   loading: boolean;
   register: (data: { name: string, email: string, password: string }) => Promise<void>;
   login: (data: { email: string, password: string }) => Promise<void>;
+  updateBalance: (addend: number, currency: string) => void
 }
 
-export const useUserStore = create<State>((set) => ({
+export const useUserStore = create<State>((set, get) => ({
   user: null,
   initialized: false,
   loading: false,
@@ -34,6 +35,18 @@ export const useUserStore = create<State>((set) => ({
       set({ loading: false })
     }
   },
+  updateBalance: (addend, currency) => {
+    const oldUser = get().user
+    if (!oldUser) return
+
+    const newAccounts = oldUser.accounts.slice()
+    const targetIndex = newAccounts.findIndex(acc => acc.currency === currency)
+    if (targetIndex === -1) return
+    const oldAccount = newAccounts[targetIndex]
+    newAccounts[targetIndex] = { ...oldAccount, balance: parseFloat((oldAccount.balance + addend).toFixed(2)) }
+
+    set({ user: { ...oldUser, accounts: newAccounts } })
+  }
 }))
 
 

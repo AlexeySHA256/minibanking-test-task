@@ -1,7 +1,6 @@
 import { ArrowRightLeftIcon, SendIcon } from "lucide-react";
 import { Transaction, TransactionType } from "./types";
 import { formatDistanceToNow } from "date-fns";
-import { CURRENCY_SYMBOLS } from "@/shared/lib/constants";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
 export function TransactionCard({ transaction }: { transaction: Transaction }) {
@@ -32,7 +31,7 @@ export function TransactionCard({ transaction }: { transaction: Transaction }) {
         <p>From: <span className="text-primary font-semibold">{transaction.fromAccountId}</span></p>
         <p>To: <span className="text-primary font-semibold">{transaction.toAccountId}</span></p>
       </div>
-      <div className="p-2 rounded-md border font-bold">{transaction.value} {CURRENCY_SYMBOLS[transaction.currency]}</div>
+      <div className="p-2 rounded-md border font-bold">{transaction.value} {transaction.currency}</div>
     </div>
   )
 }

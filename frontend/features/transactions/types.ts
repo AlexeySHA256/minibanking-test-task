@@ -3,6 +3,8 @@ export enum TransactionType {
   EXCHANGE = 'EXCHANGE',
 }
 
+export type Currency = { name: string, symbol: string }
+
 export type Transaction = {
   id: string;
   fromAccountId: string;
