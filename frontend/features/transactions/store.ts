@@ -1,6 +1,6 @@
 "use client"
 import { create } from "zustand";
-import { Currency, Transaction, TransactionListResponse } from "./types";
+import { Currency, Transaction, TransactionListResponse, TransactionType } from "./types";
 import { api } from "@/shared/lib/api";
 import { useEffect } from "react";
 import { useUserStore } from "../user/store";
@@ -15,7 +15,7 @@ type State = {
   exchange: (data: { from: string, to: string, amount: number }) => Promise<void>;
   transfer: (data: { toAccountId: string, currency: string, amount: number }) => Promise<void>;
   getExchangeRate: (from: string, to: string) => Promise<number>;
-  loadTransactions: (page?: number, limit?: number) => Promise<void>
+  loadTransactions: (params?: { page?: number, limit?: number, type?: TransactionType }) => Promise<void>
 }
 
 const exchangeRates = new Map<string, { value: number, timestamp: number }>()
@@ -75,10 +75,10 @@ export const useTransactionsStore = create<State>((set, get) => ({
       set({ loading: false })
     }
   },
-  loadTransactions: async (page, limit) => {
+  loadTransactions: async (params = {}) => {
     set({ loading: true })
     try {
-      const { data } = await api.get<TransactionListResponse>('/transactions', { params: { page, limit } })
+      const { data } = await api.get<TransactionListResponse>('/transactions', { params })
       set({ transactions: data.list, total: data.total, lastPage: data.lastPage })
     } finally {
       set({ loading: false })

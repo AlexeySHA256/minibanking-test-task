@@ -11,7 +11,7 @@ export default async function Page() {
   if (!user) return redirect("/auth/login")
 
   return (
-    <div className="flex flex-col gap-4 items-center mt-14 text-center py-20">
+    <div className="flex flex-col gap-4 items-center text-center py-20">
       <h1 className="text-5xl font-extrabold">Welcome to the app</h1>
       <BalancesSection user={user} />
       <LatestTransactionsSection />
