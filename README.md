@@ -12,7 +12,7 @@
    ```
 3. Build and launch backend:
    ```bash
-   docker compose up --build
+   docker compose up -d --build
    ```
 4. Run seed (optional):
    ```bash
@@ -23,7 +23,11 @@
    cd frontend
    cp .example.env .env.local
    ```
-7. Launch frontend:
+7. Install dependencies:
+   ```bash
+   npm ci
+   ```
+8. Launch frontend:
    ```bash
    npm run dev
    ```
