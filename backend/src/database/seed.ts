@@ -6,6 +6,16 @@ import { Ledger } from '@/entities/ledger.entity';
 import { faker } from '@faker-js/faker';
 import { dataSource } from './datasource';
 import { Currency } from '@/common/types';
+import { AccountsService } from '@/modules/accounts/accounts.service';
+
+const getAccountsService = async (queryRunner: QueryRunner) => {
+  const accountsService = new AccountsService()
+  const accountRepo = queryRunner.manager.getRepository(Account);
+  accountsService.accountRepo = accountRepo
+  await accountsService.onModuleInit()
+
+  return accountsService
+}
 
 const PASSWORD = 'qwerty123';
 
@@ -35,45 +45,10 @@ async function seedAccounts(
   queryRunner: QueryRunner,
   users: User[],
 ): Promise<Account[]> {
-  const accountRepo = queryRunner.manager.getRepository(Account);
+  const accountsService = await getAccountsService(queryRunner)
+  const result = await Promise.all(users.map(user => accountsService.createAndCreditInitialAccounts(queryRunner.manager, user.id)))
 
-  const accounts: Account[] = [];
-
-  for (const user of users) {
-    const accountsInsertResult = await queryRunner.manager
-      .createQueryBuilder(Account, 'account')
-      .insert()
-      .values([
-        { currency: Currency.USD, balance: 1000, userId: user.id },
-        { currency: Currency.EUR, balance: 500, userId: user.id },
-      ])
-      .returning('*')
-      .execute();
-
-    const [usdAccount, eurAccount] = accountsInsertResult.generatedMaps as [
-      Account,
-      Account,
-    ];
-
-    accounts.push(usdAccount, eurAccount);
-
-    await queryRunner.manager
-      .createQueryBuilder(Ledger, 'ledger')
-      .insert()
-      .values([
-        { accountId: usdAccount.id, value: 1000 },
-        { accountId: eurAccount.id, value: 500 },
-      ])
-      .execute();
-  }
-
-  const savedAccounts = await accountRepo.save(accounts);
-
-  // Parse balance to number because it becomes string for some reason even after trasformer is applied
-  return savedAccounts.map((account) => ({
-    ...account,
-    balance: parseFloat(String(account.balance)),
-  }));
+  return result.flat().map(item => ({ ...item, balance: parseFloat(String(item.balance)) }))
 }
 
 async function seedTransactions(
@@ -104,7 +79,7 @@ async function seedTransactions(
       const possibleRecipients = accounts.filter((account) =>
         account.id !== fromAccount.id && type === TransactionType.TRANSFER
           ? account.userId !== fromAccount.userId &&
-            account.currency === fromAccount.currency
+          account.currency === fromAccount.currency
           : account.userId === fromAccount.userId,
       );
 
@@ -137,10 +112,9 @@ async function seedTransactions(
       toAccount.balance += amount;
       await accountRepo.save([fromAccount, toAccount]);
 
-      // Create ledger entries (double-entry)
       const transactionLedgers = await ledgerRepo.save([
-        ledgerRepo.create({ accountId: fromAccount.id, value: -amount }),
-        ledgerRepo.create({ accountId: toAccount.id, value: +amount }),
+        ledgerRepo.create({ accountId: fromAccount.id, value: -amount, transactionId: transaction.id }),
+        ledgerRepo.create({ accountId: toAccount.id, value: +amount, transactionId: transaction.id }),
       ]);
 
       ledgers.push(...transactionLedgers);

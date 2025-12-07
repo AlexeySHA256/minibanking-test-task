@@ -36,22 +36,35 @@ export class AccountsService implements OnModuleInit {
 
     this.assetAccountsMap = new Map();
 
-    Object.values(Currency).forEach(async (currency) => {
-      let account = await this.accountRepo.findOneBy({
-        type: AccountType.ASSET,
-        currency,
-      });
-      if (!account) {
-        account = await this.accountRepo.save({
-          userId: 0,
-          balance: INITIAL_ASSETS[currency],
-          currency,
+    return Promise.all(
+      Object.values(Currency).map(async (currency) => {
+        let account = await this.accountRepo.findOneBy({
           type: AccountType.ASSET,
+          currency,
         });
-      }
+        if (!account) {
+          account = await this.accountRepo.save({
+            userId: 0,
+            balance: INITIAL_ASSETS[currency],
+            currency,
+            type: AccountType.ASSET,
+          });
+        }
 
-      this.assetAccountsMap.set(currency, account);
-    });
+        this.assetAccountsMap.set(currency, account);
+      })
+    )
+  }
+
+  getList(userId: number) {
+    return this.accountRepo.findBy({ userId })
+  }
+
+  async getBalance(accountId: string) {
+    const queryAndParameters = this.accountRepo.createQueryBuilder().select("balance").where({ id: accountId }).getQueryAndParameters()
+    const [{ balance }] = await this.accountRepo.query<{ balance: number }[]>(...queryAndParameters)
+
+    return { balance }
   }
 
   async createAndCreditInitialAccounts(manager: EntityManager, userId: number) {
